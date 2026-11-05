@@ -85,7 +85,7 @@ Tab bar, left to right:
 | ☁ ● project | gcloud chip: click to check again ([§6](#6-gcloud-login)) |
 | ↪ | `gcloud auth login` |
 | ⧉ | Open in editor ([§7](#7-open-in-editor)) |
-| Files · Changes · PR · Issues | Toggle the side panel ([§3](#3-the-side-panel)) |
+| Files · Changes · PR · Issues | Toggle the side panel ([§3](#3-the-side-panel)). With labels on, Changes shows the focused pane's branch instead of its name ("Changes" when there is none). |
 | ⚙ | herdr-sab settings ([§9](#9-settings)) |
 
 The sidebar footer gains **herdr-sab settings** under Herdr's **Settings**.
@@ -122,6 +122,7 @@ A pinned repository wins over automatic. Owner pins (`github.accounts`, `{"my-or
 ### Changes
 
 - Every uncommitted change in the repository, with `+added −removed` per file and in total.
+- The header names the branch (in a folder of repositories, the filtered one's), or says **Changes** when there is none, such as a detached HEAD.
 - The first file's diff shows straight away. Click another file to see its diff; click it again to close.
 - **Commit** commits only the files listed, never `git add -A` on the whole tree. You can turn committing off in settings.
 - **Create PR** sits beside **Commit** when the branch isn't the base (origin's default branch) and has commits the base doesn't. It pushes the branch (`-u origin HEAD` the first time) and runs `gh pr create --fill`, as a draft by default, with the gh account that can see the repository. Its title and body come from the commits. When the branch already has one, it says so and links it. In a single repository it then switches to the PR panel.

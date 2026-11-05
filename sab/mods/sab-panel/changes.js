@@ -416,12 +416,14 @@ export class Changes {
       : this.repos.length ? "No uncommitted changes" : "No folder");
     const limited = shown.some((r) => r.limited);
     const commitOn = cfg().changes.commit, pr = this.canCreatePr(target), prReady = pr && !this.busy && !this.loading;
+    // The header names the branch: the one repository's, or the filtered one's in a folder of them.
+    const branch = (this.multi ? this.repos.find((r) => r.root === this.filter) : this.repos[0])?.branch ?? "";
     return v_flex().id("changes").size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13).track_focus(this.handle)
       .on_key_down((e, cx) => {
         if (e.key === "escape" && this.typing) { this.typing = false; this.handle.focus(); cx.stop_propagation(); cx.notify(); }
       })
       .child(h_flex().h(42).flex_none().px(14).gap(8).items_center().border_b(1).border_color(t.border)
-        .child(div().font_semibold().child("Changes"))
+        .child(div().id("changes-title").min_w(0).flex_shrink(1).truncate().font_semibold().when(Boolean(branch), (e) => e.tooltip(`Changes on ${branch}`)).child(branch || "Changes"))
         .child(div().px(5).py(1).rounded(6).border_1().border_color(t.border).text_size(10).text_color(t.muted).child(`${files.length} files`))
         .when(this.multi, (e) => e.child(div().id("changes-repo-count").text_size(11).text_color(t.dim)
           .tooltip(this.clean ? `${this.clean} of them without changes` : "Every one has changes").child(`${this.repos.length} repos`)))

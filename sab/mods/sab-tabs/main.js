@@ -174,9 +174,10 @@ export default class Tabs extends View {
 
   // The focused pane's folder and the machine it is on (null: this computer).
   paneFolder(space, allPanes) {
-    const f = focused(), pane = f?.pane ? allPanes.find((p) => p.pane === f.pane) : allPanes.find((p) => p.focused);
+    const f = focused(), pane = f?.pane ? allPanes.find((p) => p.pane === f.pane)
+      : (f?.terminal && allPanes.find((p) => p.terminal === f.terminal)) || allPanes.find((p) => p.focused);
     const on = f?.pane === null ? (f.terminal?.includes("/") ? f.terminal.split("/")[0] : null) : space?.machine ?? null;
-    return { cwd: pane?.cwd || f?.cwd || space?.folder || null, on };
+    return { cwd: pane?.cwd || f?.cwd || space?.folder || null, on, branch: pane?.branch || null };
   }
 
   // Opens the focused tab's Jira ticket (cmd-alt-j).
@@ -321,15 +322,20 @@ export default class Tabs extends View {
     const labels = o.tabs.panelLabels;
     // A panel switched off while shown closes.
     if (panel && !panel.hidden && body?.active && !enabledPanels().includes(body.active)) run("layout.hide", { id: "panel" });
+    const where = this.paneFolder(space, allPanes);
     const panelButton = ({ id, label, icon }) => {
       const on = panel && !panel.hidden && body?.active === id;
+      // Changes shows the focused pane's branch, else its own name.
+      const branch = id === "changes" ? where.branch : null, text = branch || label;
+      const tip = branch ? `Changes on ${branch}` : label;
       return h_flex().id(`panel-${id}`).h(26).px(8).gap(5).flex_none().items_center().rounded(6)
         .text_size(12).bg(on ? t.selected : t.chrome).text_color(on ? t.foreground : t.muted)
         .hover((s) => s.bg(t.hover).text_color(t.foreground)).on_mouse_down("left", stop)
         .on_click(() => {
           if (on) run("layout.hide", { id: "panel" });
           else { run("layout.select", { stack: "panel-body", child: id }); run("layout.show", { id: "panel" }); }
-        }).when(!labels, (el) => el.tooltip(label)).child(svg(`${ICON}${icon}.svg`).size(14)).when(labels, (el) => el.child(label));
+        }).when(!labels || Boolean(branch), (el) => el.tooltip(tip)).child(svg(`${ICON}${icon}.svg`).size(14))
+        .when(labels, (el) => el.child(div().max_w(160).truncate().child(text)));
     };
     const hasPane = Boolean(focused()?.cwd || allPanes.some((p) => p.focused && p.cwd));
     const editor = h_flex().id("open-editor").h(26).px(8).gap(5).flex_none().items_center().rounded(6).text_size(12)
@@ -338,7 +344,6 @@ export default class Tabs extends View {
       .on_click(() => openOverlay({ mod: "sab-open-with", kind: "popup", at: "top", width: 380 }))
       .child(svg(`${ICON}code.svg`).size(14)).when(labels, (el) => el.child("Editor"));
     // The focused pane's folder in Finder; a pane on another machine has none here.
-    const where = this.paneFolder(space, allPanes);
     const finder = div().id("open-finder").size(26).flex_none().flex().items_center().justify_center().rounded(6)
       .text_color(where.cwd && !where.on ? t.muted : t.dim)
       .tooltip(!where.cwd ? "Open in Finder: focus a pane first" : where.on ? `Open in Finder: the pane is on ${where.on}` : `Open in Finder\n${where.cwd}`)

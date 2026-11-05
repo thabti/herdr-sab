@@ -32,6 +32,7 @@ User docs live in `docs/GUIDE.md`. Its §11 "How it is built" covers the file ma
 ## Changes panel (`changes.js`)
 
 - **Single repository:** the original Herdr/Kanso behaviour.
+- **Branch as the title.** The panel header and the tab bar's Changes button show the branch (`paneFolder()` in `sab-tabs` returns the focused pane's `branch`), falling back to "Changes".
 - **Folder that isn't a repository** (`changes.nested`):
   - `findRepos` runs `find` up to `changes.scanDepth` deep. It skips hidden folders and `node_modules`, `vendor`, `dist`, `build`, `target`, `Pods`, as well as repos nested in a found repo.
   - It rescans every 30 s and never scans `~` or `/`.
