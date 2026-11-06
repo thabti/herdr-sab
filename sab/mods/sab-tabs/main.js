@@ -1,4 +1,4 @@
-// herdr-sab's tab bar. Derived from the `tabs` mod shipped with Herdr
+// herdr-toolkit's tab bar. Derived from the `tabs` mod shipped with Herdr
 // (Apache-2.0); ideas from Kanso (jlopezlira/herdr-kanso) and Mission Control
 // (CiprianSpiridon/herdr-mission-control). Left to right:
 //
@@ -185,7 +185,7 @@ export default class Tabs extends View {
     const space = spaces().find((s) => s.active), tab = space?.tabs?.find((t) => t.active);
     const key = tab ? tabJira(tab, panes().filter((p) => p.tab === tab.id)) : null, url = jiraUrl(key);
     if (url) exec("open", [url]).catch(() => {});
-    else notify({ title: key ? "No Jira site set" : "No Jira key on this tab", body: key ? "Set it in herdr-sab settings → Tab bar → Jira site." : "The tab's name, branch or folder carries none (like DS-1234)." });
+    else notify({ title: key ? "No Jira site set" : "No Jira key on this tab", body: key ? "Set it in herdr-toolkit settings → Tab bar → Jira site." : "The tab's name, branch or folder carries none (like DS-1234)." });
   }
 
   gcloudLogin() {
@@ -363,7 +363,7 @@ export default class Tabs extends View {
       .when(o.tabs.finderButton, (el) => el.child(finder))
       .when(o.tabs.editorButton, (el) => el.child(editor))
       .children(PANELS.filter((p) => o.panels[p.id] !== false).map(panelButton))
-      .child(button("sab-settings", svg(`${ICON}settings.svg`).size(14), () => openOverlay({ mod: "sab-settings", kind: "dialog", width: 820, height: 620 }), "herdr-sab settings  ⌘⌥,"))
+      .child(button("sab-settings", svg(`${ICON}settings.svg`).size(14), () => openOverlay({ mod: "sab-settings", kind: "dialog", width: 820, height: 620 }), "herdr-toolkit settings  ⌘⌥,"))
       .when(Boolean(w?.buttons), (el) => el
         .child(button("minimize", "−", () => run("window.minimize")))
         .child(button("maximize", "□", () => run("window.maximize")))

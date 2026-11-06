@@ -1,4 +1,4 @@
-// herdr-sab's right side panel. One mod, five panels chosen by `props.panel`:
+// herdr-toolkit's right side panel. One mod, five panels chosen by `props.panel`:
 // "files" (a lazy file browser with Markdown and code preview), "changes"
 // (git status, diffs and a commit), "pr" (pull requests: every open one, with
 // checks, threads, reviewers, labels, merge and agent tasks), "issues" (the

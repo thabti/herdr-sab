@@ -1,4 +1,4 @@
-// herdr-sab settings, drawn as Herdr's own Settings window is (frame/settings:
+// herdr-toolkit settings, drawn as Herdr's own Settings window is (frame/settings:
 // a 190 px section list on the left, rows of "what it is" and a control, the
 // same switch and stepper). Herdr's Settings has a fixed list of sections and
 // rewrites itself on every start, so a mod can't add a section there; this is
@@ -263,7 +263,7 @@ export default class Settings extends View {
     const t = theme(), c = cfg();
     const armed = this.armed && Date.now() - this.armed < 4000;
     const nav = v_flex().flex_none().w(190).h_full().p(10).gap(2).border_r(1).border_color(t.border)
-      .child(div().px(10).pt(6).pb(12).text_size(16).font_semibold().text_color(t.foreground).child("herdr-sab"))
+      .child(div().px(10).pt(6).pb(12).text_size(16).font_semibold().text_color(t.foreground).child("herdr-toolkit"))
       .children(SECTIONS.map((s) => {
         const on = s.id === this.section;
         return h_flex().id(`set-s-${s.id}`).gap(10).px(10).py(7).items_center().rounded(7).cursor_pointer()

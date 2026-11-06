@@ -2,7 +2,7 @@
 // Modified by 0OZ: root no longer draws its own rounded, bordered card.
 // Modified by José Gutiérrez (minimalistic, 0oz design fork): renamed from oz-files.
 // Modified by jlopezlira (Kanso, https://github.com/jlopezlira/herdr-kanso): renamed from mn-files; one of the kanso-panel mod's panels.
-// Modified for herdr-sab: one of the sab-panel mod's panels; reads only while shown.
+// Modified for herdr-toolkit: one of the sab-panel mod's panels; reads only while shown.
 // A lazy file browser for the focused pane's folder, with bounded read-only previews.
 import { div, svg } from "gpui-kit";
 import { v_flex, h_flex, Editor, v_virtual_list, Scrollbar } from "gpui-base";

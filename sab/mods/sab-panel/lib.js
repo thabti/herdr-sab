@@ -1,6 +1,6 @@
 // Shared by the panels of the sab-panel mod (files, changes, pr, issues, preview).
 // Derived from Kanso's kanso-panel/lib.js (jlopezlira, https://github.com/jlopezlira/herdr-kanso, Apache-2.0).
-// Changed for herdr-sab: no layout writes. The panels live as children of the
+// Changed for herdr-toolkit: no layout writes. The panels live as children of the
 // `panel-body` stack in layouts/sab.json; sab-tabs picks one with
 // layout.select and shows or hides the `panel` column. A hidden panel stays
 // alive, so each one checks `isShown(id)` before it reads git or GitHub.

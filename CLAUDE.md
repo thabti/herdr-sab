@@ -1,6 +1,7 @@
-# herdr-sab
+# herdr-toolkit
 
 A layout plus five mods for the Herdr desktop app (plain ES modules, no build step).
+Formerly herdr-sab. Internal ids keep the `sab` prefix (layout `sab`, mods `sab-*`, `sab.json`, `layout:sab` keys, the `.herdr-sab` install marker); don't rename them, it breaks existing installs. Only user-visible text says herdr-toolkit.
 User docs live in `docs/GUIDE.md`. Its §11 "How it is built" covers the file map and design notes.
 
 ## Workflow
@@ -26,7 +27,7 @@ User docs live in `docs/GUIDE.md`. Its §11 "How it is built" covers the file ma
   - `watchFolder` is local-only.
 - **Git safety.** Commit only the listed files (`--literal-pathspecs add -A -- <paths>`), never `git add -A` on the whole tree. Pushes go through `sh -c 'GIT_TERMINAL_PROMPT=0 exec git "$@"'` so they fail instead of waiting on a hidden prompt.
 - **GitHub.** Run gh through `ghAs(account, …)` with the account from `ghAccount(root, on)`, which picks the logged-in account that can see the repo.
-- **Derived files.** Each one keeps its "Derived from / Modified by" header. Add a `Modified for herdr-sab:` line when you change what it does.
+- **Derived files.** Each one keeps its "Derived from / Modified by" header. Add a `Modified for herdr-toolkit:` line when you change what it does.
 - **Style.** No spinners: use slow `.loop("opacity")` dots, because `.spin()` redraws the whole window.
 
 ## Changes panel (`changes.js`)

@@ -2,7 +2,7 @@
 // Modified by 0OZ: root no longer draws its own rounded, bordered card.
 // Modified by José Gutiérrez (minimalistic, 0oz design fork): renamed from oz-changes.
 // Modified by jlopezlira (Kanso, https://github.com/jlopezlira/herdr-kanso): renamed from mn-changes; one of the kanso-panel mod's panels.
-// Modified for herdr-sab: one of the sab-panel mod's panels; reads only while shown.
+// Modified for herdr-toolkit: one of the sab-panel mod's panels; reads only while shown.
 // A folder that is not a repository but holds several (~/work/client/api,
 // ~/work/client/web…) shows each one's changes in its own section, with a
 // filter per repository, and commits to one repository at a time.

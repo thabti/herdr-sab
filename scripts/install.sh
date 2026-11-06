@@ -1,5 +1,5 @@
 #!/bin/sh
-# Installs (or removes) the herdr-sab layout and mods into the Herdr app home.
+# Installs (or removes) the herdr-toolkit layout and mods into the Herdr app home.
 #   scripts/install.sh            install, or update files this script installed before
 #   scripts/install.sh --dry-run  show what it would do
 #   scripts/install.sh --remove   remove the layout, the mods and the keys it added
@@ -55,11 +55,11 @@ fi
 # Never overwrite something this script did not install.
 for m in $mods; do
   if [ -d "$dest/mods/$m" ] && [ ! -f "$dest/mods/$m/.herdr-sab" ]; then
-    echo "mods/$m exists and was not installed by herdr-sab; not touching it" >&2; exit 1
+    echo "mods/$m exists and was not installed by herdr-toolkit; not touching it" >&2; exit 1
   fi
 done
 if [ -f "$dest/layouts/sab.json" ] && ! grep -q '"sab-tabs"' "$dest/layouts/sab.json"; then
-  echo "layouts/sab.json exists and is not herdr-sab's; not touching it" >&2; exit 1
+  echo "layouts/sab.json exists and is not herdr-toolkit's; not touching it" >&2; exit 1
 fi
 
 "$here/scripts/sync-shared.sh"

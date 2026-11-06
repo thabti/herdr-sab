@@ -1,4 +1,4 @@
-// herdr-sab settings: one file, ~/.config/herdr-app/sab.json, holding only what
+// herdr-toolkit settings: one file, ~/.config/herdr-app/sab.json, holding only what
 // differs from DEFAULTS below. sab-tabs reads the file every few seconds and
 // publishes it as shared "sab.settings"; every mod reads `cfg()`, which lays
 // that over DEFAULTS, and re-renders when it changes. sab-settings (the gear in

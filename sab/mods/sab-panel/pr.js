@@ -16,7 +16,7 @@
 // you, and hand a task (explain, address feedback, resolve conflicts) to your
 // agent in a new tab. A branch without one offers to create it.
 //
-// Modified for herdr-sab: one of the sab-panel mod's panels (reads only while
+// Modified for herdr-toolkit: one of the sab-panel mod's panels (reads only while
 // shown); adds Code review and Describe change agent tasks, and an open-in-browser
 // button on each row of the open list.
 import { div, svg } from "gpui-kit";

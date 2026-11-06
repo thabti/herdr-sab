@@ -1,6 +1,6 @@
-# herdr-sab guide
+# herdr-toolkit guide
 
-This guide covers everything herdr-sab adds to Herdr, how to use it day to day, every setting, and what to do when something looks wrong.
+This guide covers everything herdr-toolkit adds to Herdr, how to use it day to day, every setting, and what to do when something looks wrong.
 
 - [1. Install and remove](#1-install-and-remove)
 - [2. A tour of the window](#2-a-tour-of-the-window)
@@ -31,7 +31,7 @@ This guide covers everything herdr-sab adds to Herdr, how to use it day to day, 
 **Install**
 
 ```sh
-git clone https://github.com/thabti/herdr-sab && cd herdr-sab
+git clone https://github.com/thabti/herdr-toolkit && cd herdr-toolkit
 scripts/install.sh --dry-run
 scripts/install.sh
 herdr-app do layout.switch --name sab
@@ -69,7 +69,8 @@ It refuses to overwrite a mod or layout of the same name that it didn't install.
 │          │                                               │   (on demand)    │
 │──────────│                                               │                  │
 │ Settings │                                               │                  │
-│ herdr-sab│                                               │                  │
+│ herdr-   │                                               │                  │
+│ toolkit  │                                               │                  │
 │ settings │                                               │                  │
 │ Add mach.├───────────────────────────────────────────────┴──────────────────┤
 │          │ status bar                                                       │
@@ -86,9 +87,9 @@ Tab bar, left to right:
 | ↪ | `gcloud auth login` |
 | ⧉ | Open in editor ([§7](#7-open-in-editor)) |
 | Files · Changes · PR · Issues | Toggle the side panel ([§3](#3-the-side-panel)). With labels on, Changes shows the focused pane's branch instead of its name ("Changes" when there is none). |
-| ⚙ | herdr-sab settings ([§9](#9-settings)) |
+| ⚙ | herdr-toolkit settings ([§9](#9-settings)) |
 
-The sidebar footer gains **herdr-sab settings** under Herdr's **Settings**.
+The sidebar footer gains **herdr-toolkit settings** under Herdr's **Settings**.
 
 ---
 
@@ -190,13 +191,13 @@ Hover a tab to see the full name, such as `WEB-142 · Fix the login redirect`.
 
 **A name you type always wins.** Double-click the tab or press `F2`. To go back to the automatic name, rename the tab to nothing.
 
-Tabs that herdr-sab creates (agent tasks, issue **Start**) get names such as `#214 Review` or `#123`. These count as typed names, so they don't change.
+Tabs that herdr-toolkit creates (agent tasks, issue **Start**) get names such as `#214 Review` or `#123`. These count as typed names, so they don't change.
 
 Nothing is written to Herdr: automatic names are only drawn, so other layouts show Herdr's own names.
 
 Settings: turn automatic names off, or choose the sources (Jira keys, GitHub numbers, agent title).
 
-**Open the Jira ticket.** Set your Jira site in settings → Tab bar (for example `https://your-site.atlassian.net`); it's empty by default, and the links only appear once it's set. Then every Jira key herdr-sab shows becomes a link to `https://your-site.atlassian.net/browse/DS-1234`:
+**Open the Jira ticket.** Set your Jira site in settings → Tab bar (for example `https://your-site.atlassian.net`); it's empty by default, and the links only appear once it's set. Then every Jira key herdr-toolkit shows becomes a link to `https://your-site.atlassian.net/browse/DS-1234`:
 
 - **Tabs**: a key in the tab's name, its agent's title, its branch or its folder gives the active tab a ticket button; `⌘⌥J` opens it.
 - **Pull requests**: chips for keys in the title or branch, in the header and on each row of the open list; keys in the description become links; chips under comments and review threads that mention one.
@@ -214,7 +215,7 @@ A Claude Code tab shows a small `42%`: how full that conversation's context wind
 - It turns **red** at 80% or more (configurable).
 - It is **dimmed** when the agent is idle or the reading is more than 10 minutes old (configurable). The tooltip shows the age, e.g. `Context 42% used, 58% left · of 1000k tokens · Opus 5.5 · last reading 6 min ago`.
 
-**Where the number comes from.** Claude Code reports context only to its **status line**. herdr-sab reads a snapshot of what the status line receives: a file named `claude-statusline.json` in one of the snapshot folders (default `~/.harp` and `~/.local/state/herdr/plugins/herdr-agent-usage`).
+**Where the number comes from.** Claude Code reports context only to its **status line**. herdr-toolkit reads a snapshot of what the status line receives: a file named `claude-statusline.json` in one of the snapshot folders (default `~/.harp` and `~/.local/state/herdr/plugins/herdr-agent-usage`).
 
 If you don't have such a status line, add one to `~/.claude/settings.json`. This one saves the snapshot and prints nothing:
 
@@ -229,7 +230,7 @@ If you don't have such a status line, add one to `~/.claude/settings.json`. This
 
 If you already have a status line, add a `tee` of its input to that file. If you use herdr-agent-usage, its folder is already a default.
 
-**How a reading finds its tab.** The snapshot holds only the conversation that drew last, so herdr-sab checks it every 3 s and **keeps the last reading of every conversation** (by `session_id`). A reading belongs to a Claude Code pane when:
+**How a reading finds its tab.** The snapshot holds only the conversation that drew last, so herdr-toolkit checks it every 3 s and **keeps the last reading of every conversation** (by `session_id`). A reading belongs to a Claude Code pane when:
 
 1. the pane's title matches the conversation's name; or
 2. that pane is the only Claude Code pane in the reading's folder.
@@ -308,7 +309,7 @@ Right-click the file in **Files** → **Preview in the panel**. It refreshes as 
 
 ## 9. Settings
 
-Open **herdr-sab settings** from:
+Open **herdr-toolkit settings** from:
 
 - the sidebar footer, under Herdr's **Settings**;
 - the tab bar's ⚙;
@@ -316,7 +317,7 @@ Open **herdr-sab settings** from:
 
 It looks like Herdr's own Settings and saves as you click. There is no Save button.
 
-> **Why not inside Herdr's Settings?** Herdr's Settings window has a fixed list of sections and is rewritten on every start, so a mod can't add a section to it. herdr-sab settings is its sibling and links back (**Herdr settings…**).
+> **Why not inside Herdr's Settings?** Herdr's Settings window has a fixed list of sections and is rewritten on every start, so a mod can't add a section to it. herdr-toolkit settings is its sibling and links back (**Herdr settings…**).
 
 ### Every setting
 
@@ -357,7 +358,7 @@ Only in `sab.json` (fine as they are for most people): `pr.refreshSeconds` (60),
 
 ### The settings file
 
-The file is `~/.config/herdr-app/sab.json`. It holds **only what you changed**, so new defaults in later versions still reach you. You can edit it by hand: herdr-sab rereads it every ~3 s. If it isn't valid JSON, the last good settings stay and a notification says why.
+The file is `~/.config/herdr-app/sab.json`. It holds **only what you changed**, so new defaults in later versions still reach you. You can edit it by hand: herdr-toolkit rereads it every ~3 s. If it isn't valid JSON, the last good settings stay and a notification says why.
 
 ```json
 {
@@ -410,6 +411,8 @@ Replace any agent task's first message with `prompts.<task>`. The tasks are `rev
 
 ## 11. How it is built
 
+The project was called herdr-sab, and its internal names keep the `sab` prefix: the `sab` layout, the `sab-*` mods, `~/.config/herdr-app/sab.json`, the `layout:sab` keys and the installer's `.herdr-sab` marker. Renaming them would break existing installs, so only the visible name changed.
+
 ```
 sab/
   layouts/sab.json        Herdr's main layout; tabs → sab-tabs, footer → sab-chrome,
@@ -423,7 +426,7 @@ sab/
       files.js changes.js pr.js issues.js preview.js lib.js icons/
     sab-open-with/        the editor picker
     sab-settings/         the settings window
-    sab-chrome/           Herdr's sidebar footer + "herdr-sab settings"
+    sab-chrome/           Herdr's sidebar footer + "herdr-toolkit settings"
 scripts/
   install.sh              install / --dry-run / --remove
   sync-shared.sh          copies sab/shared/*.js into the mods

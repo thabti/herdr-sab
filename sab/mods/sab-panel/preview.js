@@ -3,7 +3,7 @@
 // ({ path, on }), set by sab-open-with's "Preview in the panel". The file is
 // read again when its folder changes, so an agent writing a doc shows live.
 // Derived from Kanso's kanso-panel/preview.js (jlopezlira, Apache-2.0);
-// changed for herdr-sab to follow shared state instead of mount props.
+// changed for herdr-toolkit to follow shared state instead of mount props.
 import { div, svg } from "gpui-kit";
 import { v_flex, h_flex, Editor } from "gpui-base";
 import { readTextFile, watchFolder, theme, home, openOverlay, shared } from "herdr";

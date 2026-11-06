@@ -12,7 +12,7 @@
 // to the side panel's Preview (sab-panel), with no editor.
 //
 // Derived from Kanso's open-with mod (jlopezlira, https://github.com/jlopezlira/herdr-kanso, Apache-2.0).
-// Changed for herdr-sab: renamed sab-open-with; the preview is shown through
+// Changed for herdr-toolkit: renamed sab-open-with; the preview is shown through
 // shared "sab.preview" and the panel stack instead of a layout write.
 
 import { View, div, svg, image } from "gpui-kit";
