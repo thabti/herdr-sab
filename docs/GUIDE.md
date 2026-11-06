@@ -123,7 +123,7 @@ A pinned repository wins over automatic. Owner pins (`github.accounts`, `{"my-or
 ### Changes
 
 - Every uncommitted change in the repository, with `+added −removed` per file and in total.
-- The header names the branch (in a folder of repositories, the filtered one's), or says **Changes** when there is none, such as a detached HEAD.
+- The header names the branch (with several sections, the filtered one's, else the pane's own worktree's), or says **Changes** when there is none, such as a detached HEAD.
 - The first file's diff shows straight away. Click another file to see its diff; click it again to close.
 - **Commit** commits only the files listed, never `git add -A` on the whole tree. You can turn committing off in settings.
 - **Create PR** sits beside **Commit** when the branch isn't the base (origin's default branch) and has commits the base doesn't. It pushes the branch (`-u origin HEAD` the first time) and runs `gh pr create --fill`, as a draft by default, with the gh account that can see the repository. Its title and body come from the commits. When the branch already has one, it says so and links it. In a single repository it then switches to the PR panel.
@@ -131,6 +131,10 @@ A pinned repository wins over automatic. Owner pins (`github.accounts`, `{"my-or
   - The chips under the title filter the list: **All**, or one repository. Repositories without changes are left out of **All**.
   - **Commit** and **Create PR** go to one repository: the one picked in the chips, else the one whose diff is open. The line above the message says which. A repository with no changes but commits ahead of its base (`↑2`) still shows, ready for its pull request.
   - Turn it off, or look deeper, in settings → Panels.
+- **Worktrees.** When the pane's repository has linked worktrees (`git worktree add`, or Claude Code's `.claude/worktrees/…`), the panel shows one section per worktree, each with its branch, the same way as a folder of repositories. The pane's own worktree comes first, is marked **here** and always shows. Linked worktrees get a branch icon. A worktree folder inside another (`.claude/worktrees/x`) isn't listed as an untracked change of the outer one.
+  - **Commit** and **Create PR** go to the worktree picked in the chips, else the one whose diff is open, else the pane's own.
+  - In a folder of repositories, a repository's linked worktrees show right after it, as `api › feature-x`.
+  - The worktree list is read again every 30 s, so a new one appears within half a minute. Turn it off in settings → Panels → **Worktrees**.
 
 ### Pull requests (PR)
 
@@ -334,6 +338,7 @@ It looks like Herdr's own Settings and saves as you click. There is no Save butt
 | | Commit from Changes | on | |
 | | Create PR from Changes | on | push + `gh pr create --fill` |
 | | Create pull requests as drafts | on | Changes and PR panels |
+| | Worktrees | on | a repository with linked worktrees shows one section per worktree |
 | | Repositories in subfolders | on | a folder that isn't a repository shows each one inside it |
 | | Look for them | 2 deep | 1 to 5 folders below the pane's folder |
 | | Pull request sections | all on | Description · People · Checks · Threads · Comments · Agent · Files |

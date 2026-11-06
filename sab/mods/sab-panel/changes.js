@@ -6,6 +6,8 @@
 // A folder that is not a repository but holds several (~/work/client/api,
 // ~/work/client/web…) shows each one's changes in its own section, with a
 // filter per repository, and commits to one repository at a time.
+// Modified for herdr-toolkit: a repository with linked worktrees shows each
+// worktree the same way, and so does a found repository's in a folder of them.
 import { div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, Scrollbar, v_virtual_list } from "gpui-base";
 import { exec, readTextFile, watchFolder, theme, settings, home, notify } from "herdr";
@@ -32,6 +34,50 @@ async function findRepos(cwd, on) {
     .map((p) => p.slice(2, -5)).filter((p) => p && insideRoot(p)).sort();
   const max = Math.max(1, Math.min(200, Number(cfg().changes.maxRepos) || 100));
   return found.filter((p, i) => !found.slice(0, i).some((q) => p.startsWith(q + "/"))).slice(0, max);
+}
+
+const leaf = (p) => p.split(/[\\/]/).pop();
+
+// A repository's worktrees (`git worktree list`): the main one first, then
+// every linked one whose folder still exists. Asked again every 30 s.
+const TREES = new Map();
+async function worktreesOf(root, on) {
+  const k = `${on ?? ""}|${root}`, hit = TREES.get(k);
+  if (hit && Date.now() - hit.at < RESCAN_MS) return hit.trees;
+  const r = await exec("git", ["worktree", "list", "--porcelain"], { cwd: root, on }).catch(() => null);
+  const trees = [];
+  if (r?.code === 0) for (const block of r.stdout.split("\n\n")) {
+    const lines = block.split("\n"), path = lines.find((l) => l.startsWith("worktree "))?.slice(9);
+    if (path && !lines.some((l) => l === "bare" || l.startsWith("prunable"))) trees.push(path);
+  }
+  if (TREES.size > 200) TREES.clear();
+  TREES.set(k, { trees, at: Date.now() });
+  return trees;
+}
+
+// Section names for worktrees: the folder's name, with its parent's when two share one.
+function treeNames(paths) {
+  const names = paths.map(leaf);
+  return paths.map((p, i) => names.filter((n) => n === names[i]).length > 1 ? p.split(/[\\/]/).slice(-2).join("/") : names[i]);
+}
+
+// A folder of repositories, plus each one's linked worktrees right after it.
+// One `find` says which have any, so only those are asked.
+async function withWorktrees(cwd, names, on) {
+  const list = names.map((name) => ({ root: `${cwd}/${name}`, name }));
+  if (cfg().changes.worktrees === false || !names.length) return list;
+  const r = await exec("find", [...names.map((n) => `./${n}/.git/worktrees`), "-maxdepth", "0", "-type", "d"], { cwd, on }).catch(() => null);
+  const has = new Set((r?.stdout ?? "").split("\n").filter((p) => p.endsWith("/.git/worktrees")).map((p) => p.slice(2, -15)));
+  const seen = new Set(list.map((e) => e.root)), out = [];
+  for (const e of list) {
+    out.push(e);
+    if (!has.has(e.name)) continue;
+    for (const p of (await worktreesOf(e.root, on)).slice(1)) {
+      if (seen.has(p)) continue;
+      seen.add(p); out.push({ root: p, name: `${e.name} › ${leaf(p)}`, tree: "linked" });
+    }
+  }
+  return out;
 }
 
 // What rarely changes, so a refresh needn't ask again: each repository's base
@@ -164,7 +210,7 @@ export class Changes {
   reset() {
     this.repos = []; this.multi = false; this.filter = null; this.collapsed = new Set(); this.scan = null; this.open = null; this.closed = false;
     this.setLines([]); this.message = ""; this.input.set_value(""); this.error = null; this.note = null; this.clean = 0; this.prUrl = null;
-    this.watching = new Set(); this.fullAt = 0; this.touched = null;
+    this.watching = new Set(); this.fullAt = 0; this.touched = null; this.kind = "repo"; this.here = null;
   }
 
   // `only`: roots to read again (from their watches); the rest keep what they had.
@@ -180,27 +226,48 @@ export class Changes {
       try {
         const top = await exec("git", ["rev-parse", "--show-toplevel"], { cwd, on });
         if (key() !== context) return;
-        let repos, multi = false;
+        let list, kind = "repo", here = null;
         if (top.code === 0) {
-          const root = top.stdout.trim();
-          repos = [await readRepo(root, root.split(/[\\/]/).pop(), on)];
-        } else {
-          // Not a repository: the repositories inside it, found again every 30 s.
-          if (!cfg().changes.nested || cwd === "/" || (!on && cwd === home())) { this.clear("Not a git repository"); return; }
-          if (!this.scan || Date.now() - this.scan.at > RESCAN_MS) this.scan = { at: Date.now(), names: await findRepos(cwd, on) };
+          // A repository; with linked worktrees, one section per worktree.
+          here = top.stdout.trim();
+          const trees = cfg().changes.worktrees !== false ? await worktreesOf(here, on) : [];
           if (key() !== context) return;
-          if (!this.scan.names.length) { this.clear("Not a git repository, and none in the folders below"); return; }
-          multi = true;
-          const had = new Map(this.multi ? this.repos.map((r) => [r.root, r]) : []), full = !only;
-          repos = await pool(this.scan.names, 8, (name) => {
-            const root = `${cwd}/${name}`;
-            if (!full && had.has(root) && !only.includes(root)) return had.get(root);
-            return readRepo(root, name, on).catch((e) => ({ root, name, on, files: [], branch: "", error: String(e?.message ?? e) }));
-          });
-          if (full) this.fullAt = Date.now();
+          if (trees.length > 1) {
+            kind = "worktrees";
+            const names = treeNames(trees);
+            list = trees.map((root, i) => ({ root, name: names[i], tree: i ? "linked" : "main" }));
+            // The pane's own worktree first: its first file's diff opens, and it reads first.
+            list.sort((a, b) => (b.root === here) - (a.root === here));
+          } else list = [{ root: here, name: leaf(here) }];
+        } else {
+          // Not a repository: the repositories inside it (and their worktrees), found again every 30 s.
+          if (!cfg().changes.nested || cwd === "/" || (!on && cwd === home())) { this.clear("Not a git repository"); return; }
+          if (!this.scan || Date.now() - this.scan.at > RESCAN_MS) {
+            const names = await findRepos(cwd, on);
+            this.scan = { at: Date.now(), list: await withWorktrees(cwd, names, on) };
+          }
+          if (key() !== context) return;
+          if (!this.scan.list.length) { this.clear("Not a git repository, and none in the folders below"); return; }
+          kind = "folder"; list = this.scan.list;
         }
+        const multi = kind !== "repo", full = !only;
+        const had = new Map(this.multi ? this.repos.map((r) => [r.root, r]) : []);
+        const repos = await pool(list, 8, ({ root, name, tree }) => {
+          if (!full && had.has(root) && !only.includes(root)) return had.get(root);
+          return readRepo(root, name, on).then((r) => ({ ...r, tree }))
+            .catch((e) => ({ root, name, on, tree, files: [], branch: "", error: String(e?.message ?? e) }));
+        });
+        if (multi && full) this.fullAt = Date.now();
         if (key() !== context) return;
-        this.repos = repos; this.multi = multi; this.on = on; this.error = null;
+        // A worktree inside another (Claude Code's .claude/worktrees/x) is not an untracked change of it.
+        if (repos.length > 1) {
+          const roots = repos.map((r) => r.root);
+          for (const r of repos) r.files = r.files.filter((f) => {
+            const path = `${r.root}/${f.path.replace(/\/$/, "")}`;
+            return !roots.some((o) => o !== r.root && (path === o || o.startsWith(path + "/")));
+          });
+        }
+        this.repos = repos; this.multi = multi; this.kind = kind; this.here = here; this.on = on; this.error = null;
         this.clean = repos.filter((r) => !r.files.length && !r.error).length;
         if (this.filter && !repos.some((r) => r.root === this.filter)) this.filter = null;
         this.watch(repos.map((r) => r.root), cx);
@@ -221,20 +288,22 @@ export class Changes {
   }
 
   clear(error) {
-    this.repos = []; this.multi = false; this.open = null; this.setLines([]); this.error = error; this.clean = 0;
+    this.repos = []; this.multi = false; this.kind = "repo"; this.here = null; this.open = null; this.setLines([]); this.error = error; this.clean = 0;
   }
 
-  // The repositories the list shows: the one picked, else every one with changes.
+  // The repositories the list shows: the one picked, else every one with changes
+  // (and the pane's own worktree).
   shown() {
     if (!this.multi) return this.repos;
     if (this.filter) return this.repos.filter((r) => r.root === this.filter);
-    return this.repos.filter((r) => r.files.length || r.error || r.ahead);
+    return this.repos.filter((r) => r.files.length || r.error || r.ahead || r.root === this.here);
   }
 
-  // Where Commit goes: the only repository, the one picked, or the one whose diff is open.
+  // Where Commit goes: the only repository, the one picked, the one whose diff
+  // is open, else the pane's own worktree.
   target() {
     if (!this.multi) return this.repos[0] ?? null;
-    const root = this.filter ?? this.open?.root;
+    const root = this.filter ?? this.open?.root ?? this.here;
     if (root) return this.repos.find((r) => r.root === root) ?? null;
     const changed = this.repos.filter((r) => r.files.length || r.ahead);
     return changed.length === 1 ? changed[0] : null;
@@ -345,8 +414,8 @@ export class Changes {
         this.prUrl = url;
         this.note = existed ? `${repo.name} already has a pull request: ${url}` : `Pull request created for ${repo.name}: ${url ?? "see the PR panel"}`;
         if (!existed) notify({ title: `Pull request created · ${repo.name}`, body: url ?? repo.branch, level: "success" });
-        // The PR panel follows the pane's repository; in a folder of repositories it has none to show.
-        if (!multi) showPanel("pr");
+        // The PR panel follows the pane's own repository (or worktree); in a folder of repositories it has none to show.
+        if (!multi || repo.root === this.here) showPanel("pr");
       } catch (e) { if (key() === context) this.note = `Could not create the pull request in ${repo.name}: ${e?.message ?? e}`; }
       finally { this.busy = false; this.refresh(cx); cx.notify(); }
     });
@@ -376,8 +445,9 @@ export class Changes {
     return h_flex().id(`change-repo-${repo.name}`).h(ROW).flex_none().px(8).gap(6).items_center().rounded(6).cursor_pointer().hover((s) => s.bg(t.hover))
       .tooltip(repo.error ? `${repo.root}\n${repo.error}` : repo.root).on_click((_e, cx) => this.toggleRepo(repo.root, cx))
       .child(svg(`mods/sab-panel/chevron-${folded ? "right" : "down"}.svg`).size(12).flex_none().text_color(t.dim))
-      .child(svg("mods/sab-panel/folder.svg").size(14).flex_none().text_color(target ? t.accent : t.muted))
+      .child(svg(repo.tree === "linked" ? "mods/sab-panel/icons/branch.svg" : "mods/sab-panel/folder.svg").size(14).flex_none().text_color(target ? t.accent : t.muted))
       .child(div().min_w(0).truncate().font_semibold().child(repo.name))
+      .when(this.kind === "worktrees" && repo.root === this.here, (e) => e.child(div().id(`change-here-${repo.name}`).flex_none().text_size(10).text_color(t.accent).tooltip("The worktree this pane is in").child("here")))
       .when(Boolean(repo.branch), (e) => e.child(div().min_w(0).flex_shrink(1).truncate().text_size(11).text_color(t.dim).child(repo.branch)))
       .child(div().flex_1())
       .when(Boolean(repo.error), (e) => e.child(div().text_size(11).text_color(t.ansi1).child("error")))
@@ -389,7 +459,7 @@ export class Changes {
 
   // All · api 3 · web 5: which repository the list (and Commit) is about.
   filterChips(t) {
-    const changed = this.repos.filter((r) => r.files.length || r.error || r.ahead || r.root === this.filter);
+    const changed = this.repos.filter((r) => r.files.length || r.error || r.ahead || r.root === this.filter || r.root === this.here);
     const chip = (id, label, count, on, onClick) => h_flex().id(id).h(22).px(8).gap(5).flex_none().items_center().rounded(11).cursor_pointer()
       .border_1().border_color(on ? t.accent : t.border).when(on, (e) => e.bg(t.selected)).hover((s) => s.bg(t.hover))
       .on_click((_e, cx) => onClick(cx))
@@ -411,13 +481,14 @@ export class Changes {
       if (!this.multi || !this.collapsed.has(repo.root)) for (const f of repo.files) items.push({ repo, f });
     }
     const enabled = Boolean(this.message.trim() && target?.files.length && !this.busy && !this.loading);
+    const trees = this.kind === "worktrees";
     const empty = this.error || (this.loading && !this.repos.length ? "Loading changes…"
-      : this.multi ? (this.filter ? "No uncommitted changes in this repository" : `No uncommitted changes in ${this.repos.length} repositories`)
+      : this.multi ? (this.filter ? `No uncommitted changes in this ${trees ? "worktree" : "repository"}` : `No uncommitted changes in ${this.repos.length} ${trees ? "worktrees" : "repositories"}`)
       : this.repos.length ? "No uncommitted changes" : "No folder");
     const limited = shown.some((r) => r.limited);
     const commitOn = cfg().changes.commit, pr = this.canCreatePr(target), prReady = pr && !this.busy && !this.loading;
-    // The header names the branch: the one repository's, or the filtered one's in a folder of them.
-    const branch = (this.multi ? this.repos.find((r) => r.root === this.filter) : this.repos[0])?.branch ?? "";
+    // The header names the branch: the one repository's, else the filtered one's, else the pane's own worktree's.
+    const branch = (this.multi ? this.repos.find((r) => r.root === (this.filter ?? this.here)) : this.repos[0])?.branch ?? "";
     return v_flex().id("changes").size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13).track_focus(this.handle)
       .on_key_down((e, cx) => {
         if (e.key === "escape" && this.typing) { this.typing = false; this.handle.focus(); cx.stop_propagation(); cx.notify(); }
@@ -426,7 +497,7 @@ export class Changes {
         .child(div().id("changes-title").min_w(0).flex_shrink(1).truncate().font_semibold().when(Boolean(branch), (e) => e.tooltip(`Changes on ${branch}`)).child(branch || "Changes"))
         .child(div().px(5).py(1).rounded(6).border_1().border_color(t.border).text_size(10).text_color(t.muted).child(`${files.length} files`))
         .when(this.multi, (e) => e.child(div().id("changes-repo-count").text_size(11).text_color(t.dim)
-          .tooltip(this.clean ? `${this.clean} of them without changes` : "Every one has changes").child(`${this.repos.length} repos`)))
+          .tooltip(this.clean ? `${this.clean} of them without changes` : "Every one has changes").child(`${this.repos.length} ${trees ? "worktrees" : "repos"}`)))
         .child(div().flex_1()).child(div().text_size(11).text_color(t.ansi2).child(`+${add}`)).child(div().text_size(11).text_color(t.ansi1).child(`−${del}`)))
       .when(this.multi, (e) => e.child(this.filterChips(t)))
       .child(v_flex().id("changes-list").flex_none().h(Math.min(this.multi ? 280 : 200, Math.max(44, items.length * ROW + 12))).overflow_y_scrollbar().p(6).border_b(1).border_color(t.border)
@@ -443,7 +514,7 @@ export class Changes {
         .when(Boolean(this.prUrl), (e) => e.cursor_pointer().tooltip("Open in the browser").on_click(() => openUrl(this.prUrl)))
         .child(this.note)))
       .when(commitOn || pr, (e) => e.child(v_flex().flex_none().p(10).gap(6).border_t(1).border_color(t.border)
-        .when(this.multi, (e) => e.child(div().truncate().text_size(11).text_color(t.dim).child(!target ? "Pick a repository above, or a file, to commit"
+        .when(this.multi, (e) => e.child(div().truncate().text_size(11).text_color(t.dim).child(!target ? `Pick a ${trees ? "worktree" : "repository"} above, or a file, to commit`
           : `${target.files.length ? `Commits ${target.files.length} file${target.files.length === 1 ? "" : "s"} to` : "Branch of"} ${target.name}${target.branch ? ` · ${target.branch}` : ""}${target.ahead ? ` · ↑${target.ahead}` : ""}`)))
         .child(h_flex().gap(8)
           .when(commitOn, (e) => e

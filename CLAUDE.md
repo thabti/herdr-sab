@@ -34,6 +34,9 @@ User docs live in `docs/GUIDE.md`. Its §11 "How it is built" covers the file ma
 
 - **Single repository:** the original Herdr/Kanso behaviour.
 - **Branch as the title.** The panel header and the tab bar's Changes button show the branch (`paneFolder()` in `sab-tabs` returns the focused pane's `branch`), falling back to "Changes".
+- **Worktrees** (`changes.worktrees`): a repository with linked worktrees becomes `kind: "worktrees"`, one section per `git worktree list` entry (bare and prunable skipped), using the same multi-section UI as a folder.
+  - `this.kind` is `repo`, `worktrees` or `folder`; `this.multi` is true for the last two. `this.here` is the pane's own worktree: sorted first, always shown, and the default Commit target. With several sections, files that are another section's root (a nested `.claude/worktrees/x/`) are dropped from the outer one.
+  - `worktreesOf` caches the list for 30 s. In folder mode, one `find ./<repo>/.git/worktrees -maxdepth 0` call says which found repos have any, so only those pay for `git worktree list`.
 - **Folder that isn't a repository** (`changes.nested`):
   - `findRepos` runs `find` up to `changes.scanDepth` deep. It skips hidden folders and `node_modules`, `vendor`, `dist`, `build`, `target`, `Pods`, as well as repos nested in a found repo.
   - It rescans every 30 s and never scans `~` or `/`.
